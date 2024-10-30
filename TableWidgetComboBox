@@ -1,0 +1,4 @@
+table = QtGui.QTableWidget(1,1)
+combobox = QtGui.QComboBox()
+combobox.addItem("Combobox item")
+table.setCellWidget(0,0, combobox)
