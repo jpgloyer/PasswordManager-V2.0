@@ -111,10 +111,25 @@ class mainProgram(QMainWindow):
         self.refreshTable()
 
     def deleteEntry(self):
-        selectedEntry = self.data[self.selectedRow][0]
-        dialog = deleteDialog(selectedEntry)
-        if dialog.delete == 1:
-            self.data.pop(self.selectedRow)
+        
+        
+        if len(self.data)>1:
+            selectedEntry = self.data[self.selectedRow][0]
+            dialog = deleteDialog(selectedEntry)
+            if dialog.delete == 1:
+                self.data.pop(self.selectedRow)
+        else:
+            dialog = QDialog()
+            dialog.setFixedSize(300,100)
+            dialog.setWindowTitle('Invalid Delete')
+            layout = QFormLayout()
+            layout.addWidget(QLabel("Cannot Delete Last Entry"))
+            button = QPushButton()
+            button.setText('OK')
+            layout.addWidget(button)
+            button.clicked.connect(dialog.accept)
+            dialog.setLayout(layout)
+            dialog.exec()
         self.buildTable()
 
 
