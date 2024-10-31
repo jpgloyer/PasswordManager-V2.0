@@ -1,21 +1,41 @@
 import sys
 from screeninfo import get_monitors
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import QFrame, QApplication, QMainWindow, QDialog, QWidget, QTableWidget, QDockWidget, QTableWidgetItem, QFormLayout, QLineEdit, QPushButton
+from PyQt5.QtWidgets import QLabel, QFrame, QApplication, QMainWindow, QDialog, QWidget, QTableWidget, QDockWidget, QTableWidgetItem, QFormLayout, QLineEdit, QPushButton
+import csv
 
 
 class mainProgram(QMainWindow):
-    def __init__(self):
+    def __init__(self, tableHeaders = ['Website','Username','Password','Card']):
         super(mainProgram, self).__init__()
-        
-        self.data = [['','','','']]
-        self.tableHeaders = ['Website','Username','Password','Card']
-        
+
+        self.filePath = 'C:\\Users\\jpglo\\Desktop\\Test.csv'        
+        try:
+            self.getDataFromCSV()
+            print(self.data)
+        except:
+            self.data = [['' for i in tableHeaders]]
+        self.tableHeaders = tableHeaders
+
+
         self.buildMainWindow()
         self.buildTable()   
         self.buildRightDock()
 
+        self.selectedRow = ''
 
+    def closeEvent(self, *args, **kwargs):
+        self.printDataToCSV()
+
+    def getDataFromCSV(self):
+        with open(self.filePath, mode='r') as file:
+            self.data = list(csv.reader(file))
+            
+
+    def printDataToCSV(self):
+        with open(self.filePath,'w',newline='') as csvFile:
+            writer = csv.writer(csvFile)
+            writer.writerows(self.data)
 
     def buildMainWindow(self):
         self.monitor = get_monitors()
@@ -36,8 +56,12 @@ class mainProgram(QMainWindow):
         self.tableWidget.setRowCount(len(self.data))
         self.tableWidget.setHorizontalHeaderLabels(self.tableHeaders)
         self.tableWidget.itemChanged.connect(self.recordTableChange)
+        self.tableWidget.cellClicked.connect(self.cellWasClicked)
         self.setCentralWidget(self.tableWidget)
         self.refreshTable() 
+
+    def cellWasClicked(self, row, column):
+        self.selectedRow = row
 
     def recordTableChange(self, item):
         self.data[item.row()][item.column()] = item.text()
@@ -57,6 +81,8 @@ class mainProgram(QMainWindow):
             self.dockLayout.addRow(self.fields[-1])
         self.addButton = QPushButton('Add Entry', clicked=self.addEntry)
         self.dockLayout.addRow(self.addButton)
+        self.deleteButton = QPushButton('Delete Entry', clicked=self.deleteEntry)
+        self.dockLayout.addRow(self.deleteButton)
         self.dock.setWidget(self.dockMenu)
 
     def refreshTable(self):
@@ -84,6 +110,45 @@ class mainProgram(QMainWindow):
                 i.setText('')
         self.refreshTable()
 
+    def deleteEntry(self):
+        selectedEntry = self.data[self.selectedRow][0]
+        dialog = deleteDialog(selectedEntry)
+        if dialog.delete == 1:
+            self.data.pop(self.selectedRow)
+        self.buildTable()
+
+
+class deleteDialog():
+    def __init__(self, entry):
+        self.delete = 0 #Changes to 1 to confirm delete
+        self.dialog = QDialog()
+        self.dialog.setWindowTitle('Delete?')
+        self.dialogLayout = QFormLayout()
+        self.question = QLabel('Type \'CONFIRM\' to Delete Entry for: '+entry+'?')
+        self.answer = QLineEdit()
+        self.acceptButton = QPushButton()
+        self.acceptButton.setText('CONFIRM')
+        self.acceptButton.clicked.connect(self.accept)
+        self.cancelButton = QPushButton()
+        self.cancelButton.setText('Cancel')
+        self.cancelButton.clicked.connect(self.cancel)
+        self.dialogLayout.addWidget(self.question)
+        self.dialogLayout.addWidget(self.answer)
+        self.dialogLayout.addWidget(self.acceptButton)
+        self.dialogLayout.addWidget(self.cancelButton)
+        self.dialog.setLayout(self.dialogLayout)
+        self.dialog.exec()
+    def accept(self):
+        if self.answer.text() == 'CONFIRM':
+            self.delete = 1
+            self.dialog.accept()
+        else:
+            self.delete = 0
+            self.dialog.accept()
+    def cancel(self):
+        self.delete = 0
+        self.dialog.accept()
+        
 
 
 if  __name__ == "__main__":
