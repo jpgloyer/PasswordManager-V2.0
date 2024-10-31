@@ -156,3 +156,4 @@ if  __name__ == "__main__":
     application = mainProgram()
     application.show()
     sys.exit(app.exec())
+    print('Yay!')
