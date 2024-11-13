@@ -11,82 +11,84 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import base64
+import winreg
 
 
 class mainProgram(QMainWindow):
     def __init__(self):
         super(mainProgram, self).__init__()
-        self.tableHeaders = ['Website','Username','Password','Card Number']
-        '''Defines headers for the main table \n'''
-
+                 
 
         self.intro = collect_information(['*Password'],flags=['file','format'])
-        self.intro.exec()
+        self.intro.exec() 
+
+        #Start Encryption Section
         password = self.intro.data_entry[0].text()
         salt = b'\xc7\xb7\x06IY4\x1b\xac\x97\x11\x9c\x8f\xc5\x07\xec\x0f'
         self.key = generateKey(password,salt)
+        #End Encryption Section
 
+        #Start File Selection Section
+        self.registryKey = winreg.HKEY_CURRENT_USER
+        self.registrySubKey = "Software\\PasswordManager"
+        try:
+            self.create_registry_key(self.registrySubKey)
+        except:
+            pass
         if self.intro.newFile == False:
-            with open(self.intro.database,'r') as file:
-                fileString = file.read()
+            if self.intro.database != '': #User manually selected file
+                with open(self.intro.database,'r') as file:
+                    fileString = file.read()
+                self.write_registry_value('DatabaseLocation',self.intro.database)
+            else: #User did not select file or create new file
+                self.intro.database = self.read_registry_value('DatabaseLocation')
+                with open(self.intro.database,'r') as file:
+                    fileString = file.read()
             self.dataBytes = Fernet(self.key).decrypt(fileString)
-        else:
+        else: #User created new file
             with open(self.intro.database, 'r') as file:
                 self.dataBytes = bytes(file.read(),'utf-8')
+            self.write_registry_value('DatabaseLocation',self.intro.database)
+        #End File Selection Section
+
                
-
-        self.monitor = get_monitors()
-        '''Defines monitor object that allows automatic screen window sizing per screen size'''
-        self.monitorXSize = int()
-        '''Defines width of user's monitor'''
-        self.monitorYSize = int()
-        '''Defines height of user's monitor'''
-        self.xShift = int()
-        '''Defines x shift used to center window'''
-        self.yShift = int()
-        '''Defines y shift used to center window'''
-        self.xSize = int()
-        '''Defines width of window'''
-        self.ySize = int()
-        '''Defines height of window'''
-
-        self.tableWidget = QTableWidget()                   
-        '''Defines Main Scrollable Table'''
-        self.tableWidgetItems = [[]] 
-        '''Defines objects to be slotted into main table cells'''
-        
-
-        self.dock = QDockWidget('Menu')
-        '''Defines right-side dock'''
-        self.dockMenu = QWidget()
-        '''Defines widget to be added to right-side dock'''
-        self.dockLayout = QFormLayout()
-        '''Defines layout for widget on right-side dock'''
-        self.dockItemPanels = [QLineEdit()]
-        '''Defines One Text box per panel to allow for new row addition'''
-        self.addButton = QPushButton()
-        '''Defines button on right-side dock that makes new entry from right-side dock data'''
-        self.deviceNames = [QLineEdit()]
-        '''Defines text boxes on right-side dock used to enter individual device names'''
-        self.deviceNameSlots = 0
-        self.spacer = QSpacerItem(0,0)
-        '''Defines space between the add section of the right-side dock and the rest of the right-side dock'''
-        self.printButton = QPushButton()
-        '''Defines button to print the current table to the console'''
-        self.deleteButton = QPushButton()
-
-
-        self.currentlySelectedCell = [0,0]
-
-        self.uniqueItemNumbers = []
-        
-
         #Initial Setup
         self.buildMainWindow()
         self.buildInitialTable()
         self.buildRightDock()
 
 
+
+
+
+
+    def create_registry_key(self, path):
+        try:
+            winreg.CreateKey(winreg.HKEY_CURRENT_USER, path)
+        except PermissionError:
+            print('Error')
+            pass
+
+    def read_registry_value(self, value_name):
+        try:
+            with winreg.OpenKey(self.registryKey, self.registrySubKey) as reg_key:
+                value, _ = winreg.QueryValueEx(reg_key, value_name)
+                print(value)
+                return value
+        except:
+            print('Error')
+
+            pass
+
+    def write_registry_value(self, value_name, value_data):
+        try:
+            with winreg.OpenKey(self.registryKey, self.registrySubKey, 0, winreg.KEY_WRITE) as reg_key:
+                winreg.SetValueEx(reg_key, value_name, 0, winreg.REG_SZ, value_data)
+        except:
+            print('Error')
+
+            pass
+        
     def buildRightDock(self):
         self.dockLayout = QFormLayout()
         self.dockMenu = QWidget()
@@ -100,6 +102,7 @@ class mainProgram(QMainWindow):
         self.card.setPlaceholderText('Card (Optional):')
         self.addEntryButton = QPushButton('Add Entry:',clicked=self.addEntry)
         self.deleteEntryButton = QPushButton('Delete Entry:',clicked=self.deleteEntry)
+        self.importDataButton = QPushButton('Import CSV',clicked=self.importData)
         self.saveButton = QPushButton('Save Changes',clicked=self.save)
 
         self.dockInformation = {self.tableHeaders[0]:self.website,
@@ -114,11 +117,27 @@ class mainProgram(QMainWindow):
         self.dockLayout.addRow(self.addEntryButton)
         self.dockLayout.addRow(self.deleteEntryButton)
         self.dockLayout.addRow(self.saveButton)
+        self.dockLayout.addRow(self.importDataButton)
         self.dockMenu.setLayout(self.dockLayout)
         self.dock = QDockWidget('Menu')
         self.dock.setWidget(self.dockMenu)
         self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, self.dock) 
     
+    def importData(self):
+        fileSelect = QFileDialog()
+        fileSelect.setNameFilter('*.csv')
+        fileSelect.exec()
+        with open(fileSelect.selectedFiles()[0], 'r') as file:
+            newPasswords = file.read()
+            newPasswords = newPasswords.split()
+            for index, row in enumerate(newPasswords):
+                newPasswords[index] = row.split(',')
+        for rowIndex, row in enumerate(newPasswords[1:]):
+            self.tableWidget.insertRow(self.tableWidget.rowCount())
+            for columnIndex, column in enumerate(newPasswords[rowIndex]):
+                cell = QTableWidgetItem(column)
+                self.tableWidget.setItem(self.tableWidget.rowCount()-1,columnIndex,cell)
+
     def save(self):
         decryptedString = ''
         for header in self.tableHeaders:
@@ -129,7 +148,6 @@ class mainProgram(QMainWindow):
                 decryptedString = decryptedString + self.tableWidget.item(rowIndex, columnIndex).text() + ','
             decryptedString = decryptedString[:-1] + '\r\n'
         decryptedString = decryptedString[:-2]
-        print(decryptedString)
         with open(self.intro.database, 'w') as encrypted_file:
             encrypted_file.write(Fernet(self.key).encrypt(bytes(decryptedString,'utf-8')).decode('utf-8'))
 
@@ -138,6 +156,7 @@ class mainProgram(QMainWindow):
         self.tableWidget.resizeRowsToContents()
 
     def buildMainWindow(self):
+        self.monitor = get_monitors()
         self.monitorXSize = int(self.monitor[0].width)
         self.monitorYSize = int(self.monitor[0].height)
         self.xShift = int(self.monitorXSize*.1)
@@ -148,6 +167,9 @@ class mainProgram(QMainWindow):
         self.setWindowTitle('Add Material to Contract')
     
     def buildInitialTable(self):
+        self.tableWidget = QTableWidget()  
+        self.currentlySelectedCell = [0,0]
+        self.tableHeaders = ['Website','Username','Password','Card Number']
         self.dataList = self.dataBytes.decode('utf-8').split('\n')
         for index in range(len(self.dataList)):
             self.dataList[index] = self.dataList[index].split(',')
@@ -165,23 +187,25 @@ class mainProgram(QMainWindow):
 
         for rowIndex, row in enumerate(self.dataGrid):
             for columnIndex, column in enumerate(row):
-                self.tableWidget.setItem(rowIndex, columnIndex,QTableWidgetItem(self.dataGrid[rowIndex][columnIndex]))
+                cell = QTableWidgetItem(self.dataGrid[rowIndex][columnIndex])
+                if columnIndex == 2:
+                    cell.setForeground(QtGui.QBrush(QtGui.QColor(255, 255, 255)))
+                self.tableWidget.setItem(rowIndex, columnIndex,cell)
 
-
-        #self.tableWidget.itemChanged.connect(self.tableItemChanged)
         self.tableWidget.itemSelectionChanged.connect(self.tableItemSelectionChanged)
-        #self.tableWidget.resizeColumnsToContents()
         self.tableWidget.resizeRowsToContents()
         for i in range(self.tableWidget.columnCount()):
             self.tableWidget.setColumnWidth(i,int(self.xSize/4)-100)
-
+        
         self.setCentralWidget(self.tableWidget)
 
+    def updateDeleteRowButton(self):
+        if self.tableWidget.rowCount()>1:
+            self.deleteEntryButton.setText('Delete Item: '+self.tableWidget.item(self.currentlySelectedCell[0],0).text())
+
     def tableItemSelectionChanged(self):
-        self.currentlySelectedCell = (self.tableWidget.currentRow(),self.tableWidget.currentColumn())
-        entry = self.tableWidget.itemAt(self.currentlySelectedCell[0],0).text()
-        self.deleteEntryButton.setText(f'Delete Entry for: {entry}')
-        #self.buildRightDock()
+        self.currentlySelectedCell = [self.tableWidget.currentRow(),self.tableWidget.currentColumn()]
+        self.updateDeleteRowButton()
         
     def addEntry(self):
         self.tableWidget.insertRow(self.tableWidget.rowCount())
@@ -193,11 +217,6 @@ class mainProgram(QMainWindow):
 
     def deleteEntry(self):
         self.tableWidget.removeRow(self.currentlySelectedCell[0])
-
-
-
-def encrypt(fileString, key):
-    return Fernet(key).encrypt(fileString)
 
 def generateKey(password, salt):
     kdf = PBKDF2HMAC(algorithm=hashes.SHA256(),
@@ -253,6 +272,9 @@ class collect_information(QDialog):
         self.layout1.addWidget(self.buttons[0],rows+1, 0)
         self.layout1.addWidget(self.buttons[1],rows+1, 1)
 
+    def closeEvent(self, event):
+        sys.exit(app.exec())
+
     def choose_database(self):
         self.newFile = False
         self.database = QFileDialog()
@@ -265,8 +287,9 @@ class collect_information(QDialog):
         self.newFile = True
         self.database = QFileDialog.getSaveFileName()[0]
         #if self.database != '.csv':
-        with open(self.database,'w') as file:
-            file.write('Website,Username,Password,Card\nDeleteMe,DeleteMe,DeleteMe,DeleteMe')     
+        if self.database != '':
+            with open(self.database,'w') as file:
+                file.write('Website,Username,Password,Card\nDeleteMe,DeleteMe,DeleteMe,DeleteMe')     
         
     def return_values(self):
         return [i.text() for i in self.data_entry]
