@@ -22,13 +22,23 @@ class mainProgram(QMainWindow):
         self.intro = collect_information(['*Password'],flags=['file','format'])
         self.intro.exec() 
 
-        #Start Encryption Section
-        password = self.intro.data_entry[0].text()
-        salt = b'\xc7\xb7\x06IY4\x1b\xac\x97\x11\x9c\x8f\xc5\x07\xec\x0f'
-        self.key = generateKey(password,salt)
-        #End Encryption Section
 
-        #Start File Selection Section
+        self.generateKey()
+
+
+        self.selectFileAndStoreLocation()
+
+               
+        #Initial Setup
+        self.buildMainWindow()
+        self.buildInitialTable()
+        self.buildRightDock()
+
+
+
+
+    def selectFileAndStoreLocation(self):
+                #Start File Selection Section
         self.registryKey = winreg.HKEY_CURRENT_USER
         self.registrySubKey = "Software\\PasswordManager"
         try:
@@ -44,23 +54,12 @@ class mainProgram(QMainWindow):
                 self.intro.database = self.read_registry_value('DatabaseLocation')
                 with open(self.intro.database,'r') as file:
                     fileString = file.read()
-            self.dataBytes = Fernet(self.key).decrypt(fileString)
+            self.dataBytes = Fernet(self.key).decrypt(fileString) #------------------------------------THIS LINE ERRORS ON A BAD PASSWORD-------------
         else: #User created new file
             with open(self.intro.database, 'r') as file:
                 self.dataBytes = bytes(file.read(),'utf-8')
             self.write_registry_value('DatabaseLocation',self.intro.database)
         #End File Selection Section
-
-               
-        #Initial Setup
-        self.buildMainWindow()
-        self.buildInitialTable()
-        self.buildRightDock()
-
-
-
-
-
 
     def create_registry_key(self, path):
         try:
@@ -218,14 +217,15 @@ class mainProgram(QMainWindow):
     def deleteEntry(self):
         self.tableWidget.removeRow(self.currentlySelectedCell[0])
 
-def generateKey(password, salt):
-    kdf = PBKDF2HMAC(algorithm=hashes.SHA256(),
-                     length=32,
-                     salt=salt,
-                     iterations=390000)
-    password = bytes(password,'utf-8')
-    key = base64.urlsafe_b64encode(kdf.derive(password))
-    return key
+    def generateKey(self):
+        self.password = self.intro.data_entry[0].text()
+        self.salt = b'\xc7\xb7\x06IY4\x1b\xac\x97\x11\x9c\x8f\xc5\x07\xec\x0f'
+        kdf = PBKDF2HMAC(algorithm=hashes.SHA256(),
+                        length=32,
+                        salt=self.salt,
+                        iterations=390000)
+        self.password = bytes(self.password,'utf-8')
+        self.key = base64.urlsafe_b64encode(kdf.derive(self.password))
 
 class signalClass(QWidget):
     signal1 = QtCore.pyqtSignal()  
@@ -285,8 +285,8 @@ class collect_information(QDialog):
 
     def create_new_database(self):
         self.newFile = True
+        #Move below to selectFileAndStoreLocation ------------------------------------------------------------------
         self.database = QFileDialog.getSaveFileName()[0]
-        #if self.database != '.csv':
         if self.database != '':
             with open(self.database,'w') as file:
                 file.write('Website,Username,Password,Card\nDeleteMe,DeleteMe,DeleteMe,DeleteMe')     
