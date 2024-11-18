@@ -3,7 +3,7 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 import sys
 from screeninfo import get_monitors
-from PyQt5 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QDialogButtonBox, QMessageBox, QFileDialog, QAbstractScrollArea, QSpinBox, QCheckBox, QInputDialog, QLabel, QGridLayout, QComboBox, QFrame, QApplication, QMainWindow, QDialog, QWidget, QTableWidget, QDockWidget, QTableWidgetItem, QFormLayout, QLineEdit, QPushButton, QPlainTextEdit, QSpacerItem
 import json
 import csv
@@ -22,6 +22,7 @@ class mainProgram(QMainWindow):
         self.intro = collect_information(['*Password'],flags=['file','format'])
         self.intro.exec() 
 
+        #self.setStyleSheet("background-color: grey;") 
 
         self.generateKey()
 
@@ -189,7 +190,10 @@ class mainProgram(QMainWindow):
                 cell = QTableWidgetItem(self.dataGrid[rowIndex][columnIndex])
                 if columnIndex == 2:
                     cell.setForeground(QtGui.QBrush(QtGui.QColor(255, 255, 255)))
+                #cell.setBackground(QtGui.QBrush(QtGui.QColor(80, 80, 80)))
+
                 self.tableWidget.setItem(rowIndex, columnIndex,cell)
+        
 
         self.tableWidget.itemSelectionChanged.connect(self.tableItemSelectionChanged)
         self.tableWidget.resizeRowsToContents()
