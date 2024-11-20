@@ -14,6 +14,74 @@ import base64
 import winreg
 
 
+
+
+class Ui_addEntryDialog(object):
+    def setupUi(self, addEntryDialog):
+        addEntryDialog.setObjectName("addEntryDialog")
+        addEntryDialog.resize(390, 402)
+        self.gridLayout_2 = QtWidgets.QGridLayout(addEntryDialog)
+        self.gridLayout_2.setObjectName("gridLayout_2")
+        self.gridLayout = QtWidgets.QGridLayout()
+        self.gridLayout.setObjectName("gridLayout")
+        self.cardLabel = QtWidgets.QLabel(addEntryDialog)
+        self.cardLabel.setObjectName("cardLabel")
+        self.gridLayout.addWidget(self.cardLabel, 3, 1, 1, 1)
+        self.websiteBox = QtWidgets.QLineEdit(addEntryDialog)
+        self.websiteBox.setObjectName("websiteBox")
+        self.gridLayout.addWidget(self.websiteBox, 0, 2, 1, 1)
+        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.gridLayout.addItem(spacerItem, 1, 3, 1, 1)
+        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.gridLayout.addItem(spacerItem1, 1, 0, 1, 1)
+        self.websiteLabel = QtWidgets.QLabel(addEntryDialog)
+        self.websiteLabel.setObjectName("websiteLabel")
+        self.gridLayout.addWidget(self.websiteLabel, 0, 1, 1, 1)
+        self.usernameLabel = QtWidgets.QLabel(addEntryDialog)
+        self.usernameLabel.setObjectName("usernameLabel")
+        self.gridLayout.addWidget(self.usernameLabel, 1, 1, 1, 1)
+        self.passwordLabel = QtWidgets.QLabel(addEntryDialog)
+        self.passwordLabel.setObjectName("passwordLabel")
+        self.gridLayout.addWidget(self.passwordLabel, 2, 1, 1, 1)
+        self.usernameBox = QtWidgets.QLineEdit(addEntryDialog)
+        self.usernameBox.setObjectName("usernameBox")
+        self.gridLayout.addWidget(self.usernameBox, 1, 2, 1, 1)
+        self.passwordbox = QtWidgets.QLineEdit(addEntryDialog)
+        self.passwordbox.setObjectName("passwordbox")
+        self.gridLayout.addWidget(self.passwordbox, 2, 2, 1, 1)
+        self.cardBox = QtWidgets.QLineEdit(addEntryDialog)
+        self.cardBox.setObjectName("cardBox")
+        self.gridLayout.addWidget(self.cardBox, 3, 2, 1, 1)
+        self.addEntryButton = QtWidgets.QPushButton(addEntryDialog)
+        self.addEntryButton.setObjectName("addEntryButton")
+        self.gridLayout.addWidget(self.addEntryButton, 4, 2, 1, 1)
+        self.cancelButton = QtWidgets.QPushButton(addEntryDialog)
+        self.cancelButton.setObjectName("cancelButton")
+        self.gridLayout.addWidget(self.cancelButton, 4, 1, 1, 1)
+        self.randomizeButton = QtWidgets.QPushButton(addEntryDialog)
+        self.randomizeButton.setObjectName("randomizeButton")
+        self.gridLayout.addWidget(self.randomizeButton, 2, 3, 1, 1)
+        self.gridLayout_2.addLayout(self.gridLayout, 0, 0, 1, 1)
+
+        self.retranslateUi(addEntryDialog)
+        self.addEntryButton.clicked.connect(addEntryDialog.accept) # type: ignore
+        self.cancelButton.clicked.connect(addEntryDialog.reject) # type: ignore
+        QtCore.QMetaObject.connectSlotsByName(addEntryDialog)
+
+    def retranslateUi(self, addEntryDialog):
+        _translate = QtCore.QCoreApplication.translate
+        addEntryDialog.setWindowTitle(_translate("addEntryDialog", "Dialog"))
+        self.cardLabel.setText(_translate("addEntryDialog", "Card"))
+        self.websiteLabel.setText(_translate("addEntryDialog", "Website"))
+        self.usernameLabel.setText(_translate("addEntryDialog", "Username"))
+        self.passwordLabel.setText(_translate("addEntryDialog", "Password"))
+        self.addEntryButton.setText(_translate("addEntryDialog", "Add Entry"))
+        self.cancelButton.setText(_translate("addEntryDialog", "Cancel"))
+        self.randomizeButton.setText(_translate("addEntryDialog", "Randomize"))
+
+
+
+
 class mainProgram(QMainWindow):
     def __init__(self):
         super(mainProgram, self).__init__()
@@ -92,28 +160,28 @@ class mainProgram(QMainWindow):
     def buildRightDock(self):
         self.dockLayout = QFormLayout()
         self.dockMenu = QWidget()
-        self.website = QLineEdit()
-        self.website.setPlaceholderText('Website:')
-        self.username = QLineEdit()
-        self.username.setPlaceholderText('Username:')
-        self.password = QLineEdit()
-        self.password.setPlaceholderText('Password:')
-        self.card = QLineEdit()
-        self.card.setPlaceholderText('Card (Optional):')
-        self.addEntryButton = QPushButton('Add Entry:',clicked=self.addEntry)
+        #self.website = QLineEdit()
+        #self.website.setPlaceholderText('Website:')
+        #self.username = QLineEdit()
+        #self.username.setPlaceholderText('Username:')
+        #self.password = QLineEdit()
+        #self.password.setPlaceholderText('Password:')
+        #self.card = QLineEdit()
+        #self.card.setPlaceholderText('Card (Optional):')
+        self.addEntryButton = QPushButton('Add Entry:',clicked=self.addEntryWindow)
         self.deleteEntryButton = QPushButton('Delete Entry:',clicked=self.deleteEntry)
         self.importDataButton = QPushButton('Import CSV',clicked=self.importData)
         self.saveButton = QPushButton('Save Changes',clicked=self.save)
 
-        self.dockInformation = {self.tableHeaders[0]:self.website,
-                                self.tableHeaders[1]:self.username,
-                                self.tableHeaders[2]:self.password,
-                                self.tableHeaders[3]:self.card}
+        #self.dockInformation = {self.tableHeaders[0]:self.website,
+        #                        self.tableHeaders[1]:self.username,
+        #                        self.tableHeaders[2]:self.password,
+        #                        self.tableHeaders[3]:self.card}
 
-        self.dockLayout.addRow(self.website)
-        self.dockLayout.addRow(self.username)
-        self.dockLayout.addRow(self.password)
-        self.dockLayout.addRow(self.card)
+        #self.dockLayout.addRow(self.website)
+        #self.dockLayout.addRow(self.username)
+        #self.dockLayout.addRow(self.password)
+        #self.dockLayout.addRow(self.card)
         self.dockLayout.addRow(self.addEntryButton)
         self.dockLayout.addRow(self.deleteEntryButton)
         self.dockLayout.addRow(self.saveButton)
@@ -210,13 +278,27 @@ class mainProgram(QMainWindow):
         self.currentlySelectedCell = [self.tableWidget.currentRow(),self.tableWidget.currentColumn()]
         self.updateDeleteRowButton()
         
+    # def addEntry(self):
+    #     self.tableWidget.insertRow(self.tableWidget.rowCount())
+    #     for index, column in enumerate(self.tableHeaders):
+    #         cell = QTableWidgetItem(self.dockInformation[column].text())
+    #         self.tableWidget.setItem(self.tableWidget.rowCount()-1,index,cell)
+    #     for i in self.dockInformation:
+    #         self.dockInformation[i].setText('')
+
+    def addEntryWindow(self):
+        self.addEntryDialog = QtWidgets.QDialog()
+        self.addEntryUI = Ui_addEntryDialog()
+        self.addEntryUI.setupUi(self.addEntryDialog)
+        self.addEntryDialog.accepted.connect(self.addEntry)
+        self.addEntryDialog.exec()
+
     def addEntry(self):
         self.tableWidget.insertRow(self.tableWidget.rowCount())
-        for index, column in enumerate(self.tableHeaders):
-            cell = QTableWidgetItem(self.dockInformation[column].text())
+        for index, column in enumerate([self.addEntryUI.websiteBox.text(),self.addEntryUI.usernameBox.text(),self.addEntryUI.passwordbox.text(),self.addEntryUI.cardBox.text()]):
+            cell = QTableWidgetItem(column)
             self.tableWidget.setItem(self.tableWidget.rowCount()-1,index,cell)
-        for i in self.dockInformation:
-            self.dockInformation[i].setText('')
+
 
     def deleteEntry(self):
         self.tableWidget.removeRow(self.currentlySelectedCell[0])
