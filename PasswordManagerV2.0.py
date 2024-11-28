@@ -85,29 +85,24 @@ class Ui_addEntryDialog(object):
 class mainProgram(QMainWindow):
     def __init__(self):
         super(mainProgram, self).__init__()
-                 
-
         self.intro = collect_information(['*Password'],flags=['file','format'])
         self.intro.exec() 
-
-        #self.setStyleSheet("background-color: grey;") 
-
+        self.password = self.intro.data_entry[0].text()
         self.generateKey()
-
-
         self.selectFileAndStoreLocation()
-
-               
-        #Initial Setup
         self.buildMainWindow()
         self.buildInitialTable()
         self.buildRightDock()
 
+    def closeEvent(self, event):
+        self.save()
 
-
+    def changeMasterPassword(self):
+        self.password, pp_done = QInputDialog.getText(self, 'Personal Password', 'Enter Personal Password:')
+        self.generateKey()
+        
 
     def selectFileAndStoreLocation(self):
-                #Start File Selection Section
         self.registryKey = winreg.HKEY_CURRENT_USER
         self.registrySubKey = "Software\\PasswordManager"
         try:
@@ -123,7 +118,10 @@ class mainProgram(QMainWindow):
                 self.intro.database = self.read_registry_value('DatabaseLocation')
                 with open(self.intro.database,'r') as file:
                     fileString = file.read()
-            self.dataBytes = Fernet(self.key).decrypt(fileString) #------------------------------------THIS LINE ERRORS ON A BAD PASSWORD-------------
+            try:
+                self.dataBytes = Fernet(self.key).decrypt(fileString) #------------------------------------THIS LINE ERRORS ON A BAD PASSWORD-------------
+            except:
+                sys.exit()
         else: #User created new file
             with open(self.intro.database, 'r') as file:
                 self.dataBytes = bytes(file.read(),'utf-8')
@@ -171,7 +169,8 @@ class mainProgram(QMainWindow):
         self.addEntryButton = QPushButton('Add Entry:',clicked=self.addEntryWindow)
         self.deleteEntryButton = QPushButton('Delete Entry:',clicked=self.deleteEntry)
         self.importDataButton = QPushButton('Import CSV',clicked=self.importData)
-        self.saveButton = QPushButton('Save Changes',clicked=self.save)
+        self.changePasswordButton = QPushButton('Change Master Password',clicked=self.changeMasterPassword)
+        #self.saveButton = QPushButton('Save Changes',clicked=self.save)
 
         #self.dockInformation = {self.tableHeaders[0]:self.website,
         #                        self.tableHeaders[1]:self.username,
@@ -184,7 +183,8 @@ class mainProgram(QMainWindow):
         #self.dockLayout.addRow(self.card)
         self.dockLayout.addRow(self.addEntryButton)
         self.dockLayout.addRow(self.deleteEntryButton)
-        self.dockLayout.addRow(self.saveButton)
+        self.dockLayout.addRow(self.changePasswordButton)
+        #self.dockLayout.addRow(self.saveButton)
         self.dockLayout.addRow(self.importDataButton)
         self.dockMenu.setLayout(self.dockLayout)
         self.dock = QDockWidget('Menu')
@@ -195,16 +195,17 @@ class mainProgram(QMainWindow):
         fileSelect = QFileDialog()
         fileSelect.setNameFilter('*.csv')
         fileSelect.exec()
-        with open(fileSelect.selectedFiles()[0], 'r') as file:
-            newPasswords = file.read()
-            newPasswords = newPasswords.split()
-            for index, row in enumerate(newPasswords):
-                newPasswords[index] = row.split(',')
-        for rowIndex, row in enumerate(newPasswords[1:]):
-            self.tableWidget.insertRow(self.tableWidget.rowCount())
-            for columnIndex, column in enumerate(newPasswords[rowIndex]):
-                cell = QTableWidgetItem(column)
-                self.tableWidget.setItem(self.tableWidget.rowCount()-1,columnIndex,cell)
+        if fileSelect.selectedFiles() != []:
+            with open(fileSelect.selectedFiles()[0], 'r') as file:
+                newPasswords = file.read()
+                newPasswords = newPasswords.split()
+                for index, row in enumerate(newPasswords):
+                    newPasswords[index] = row.split(',')
+            for rowIndex, row in enumerate(newPasswords[1:]):
+                self.tableWidget.insertRow(self.tableWidget.rowCount())
+                for columnIndex, column in enumerate(newPasswords[rowIndex]):
+                    cell = QTableWidgetItem(column)
+                    self.tableWidget.setItem(self.tableWidget.rowCount()-1,columnIndex,cell)
 
     def save(self):
         decryptedString = ''
@@ -304,7 +305,6 @@ class mainProgram(QMainWindow):
         self.tableWidget.removeRow(self.currentlySelectedCell[0])
 
     def generateKey(self):
-        self.password = self.intro.data_entry[0].text()
         self.salt = b'\xc7\xb7\x06IY4\x1b\xac\x97\x11\x9c\x8f\xc5\x07\xec\x0f'
         kdf = PBKDF2HMAC(algorithm=hashes.SHA256(),
                         length=32,
