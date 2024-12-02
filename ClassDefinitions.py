@@ -54,6 +54,16 @@ class mainProgram(QMainWindow):
         for i in range(len(self.data[0])):
             self.tableWidget.setColumnWidth(i,200)
         self.tableWidget.setRowCount(len(self.data))
+        
+        #----------------------------------------------SET CELL TO HAVE A DROP DOWN MENU-------------------------------------------
+        #for i in range(len(self.data)):
+        #    for j in range(len(self.data[i])):
+        #        combobox = QtGui.QComboBox()
+        #       for k in range(0,99):
+        #            combobox.addItem(k)
+        #        table.setCellWidget(i,j,combobox)
+
+        
         self.tableWidget.setHorizontalHeaderLabels(self.tableHeaders)
         self.tableWidget.itemChanged.connect(self.recordTableChange)
         self.tableWidget.cellClicked.connect(self.cellWasClicked)
